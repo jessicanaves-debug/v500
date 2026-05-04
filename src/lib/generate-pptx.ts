@@ -37,7 +37,7 @@ export interface EvolucaoRow {
   mes3: string;
 }
 
-export interface ResolvidoEntry { domain: string; }
+export interface ResolvidoEntry { domain: string; logoDataUrl?: string; }
 export interface ProximoPasso { text: string; enabled: boolean; }
 
 export type HeatmapIcon = "sucesso" | "whitelist" | "tratativa" | "parceiro" | "nenhum";
@@ -1376,15 +1376,25 @@ function addResolvidosSlide(pptx: pptxgen, data: PresentationData, logo: string 
     const cardY = 1.5 + row * 0.95;
     slide.addShape("roundRect", {
       x: cardX, y: cardY, w: 1.45, h: 0.8,
-      fill: { color: COLORS.bgLight },
+      fill: { color: COLORS.white },
       line: { color: COLORS.border, width: 0.5 },
       rectRadius: 0.05,
     });
-    slide.addText(r.domain, {
-      x: cardX, y: cardY, w: 1.45, h: 0.8,
-      fontFace: FONT_BODY, fontSize: 8, color: COLORS.primary,
-      align: "center", valign: "middle", bold: true,
-    });
+    if (r.logoDataUrl) {
+      // Logo centralizada dentro do card
+      slide.addImage({
+        data: r.logoDataUrl,
+        x: cardX + 0.1, y: cardY + 0.1, w: 1.25, h: 0.6,
+        sizing: { type: "contain", w: 1.25, h: 0.6 },
+      });
+    } else {
+      // Fallback: texto do domínio
+      slide.addText(r.domain, {
+        x: cardX, y: cardY, w: 1.45, h: 0.8,
+        fontFace: FONT_BODY, fontSize: 7, color: COLORS.primary,
+        align: "center", valign: "middle", bold: true,
+      });
+    }
   });
 }
 
