@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import {
   ChevronRight, ChevronLeft, Check, Loader2, Plus, Trash2,
@@ -37,6 +37,107 @@ const STEPS = [
   { id: 5, label: "Campanha & Saving" },
   { id: 6, label: "Resolvidos & Preview" },
 ];
+
+// ─── ResolvidoCard: input de domínio + preview de logo automático ─────────────
+
+function ResolvidoCard({
+  entry, onChange, onRemove,
+}: {
+  entry: ResolvidoEntry;
+  onChange: (updated: ResolvidoEntry) => void;
+  onRemove?: () => void;
+}) {
+  const [logoStatus, setLogoStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Converte URL da logo para base64 para poder embedar no PPT
+  async function fetchLogoAsBase64(domain: string): Promise<string | null> {
+    try {
+      // Usa proxy interno para evitar CORS
+      const res = await fetch(`/api/logo-proxy?domain=${encodeURIComponent(domain)}`);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  function handleDomainChange(value: string) {
+    onChange({ ...entry, domain: value, logoDataUrl: undefined });
+    setLogoStatus("idle");
+    if (timerRef.current) clearTimeout(timerRef.current);
+
+    const cleaned = value.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "");
+    if (!cleaned || !cleaned.includes(".")) return;
+
+    // Debounce 800ms para não bater na API a cada tecla
+    timerRef.current = setTimeout(async () => {
+      setLogoStatus("loading");
+      const dataUrl = await fetchLogoAsBase64(cleaned);
+      if (dataUrl) {
+        onChange({ domain: value, logoDataUrl: dataUrl });
+        setLogoStatus("ok");
+      } else {
+        setLogoStatus("error");
+      }
+    }, 800);
+  }
+
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/5 p-2 flex flex-col gap-1.5">
+      {/* Preview do card como vai aparecer no PPT */}
+      <div className="rounded bg-white flex items-center justify-center" style={{ height: 44 }}>
+        {logoStatus === "loading" && (
+          <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+        )}
+        {logoStatus === "ok" && entry.logoDataUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={entry.logoDataUrl} alt={entry.domain} className="max-h-8 max-w-full object-contain px-2" />
+        )}
+        {logoStatus === "error" && (
+          <span className="text-[9px] text-gray-400 text-center px-1 font-mono">{entry.domain || "—"}</span>
+        )}
+        {logoStatus === "idle" && !entry.domain && (
+          <span className="text-[9px] text-gray-300">logo aqui</span>
+        )}
+        {logoStatus === "idle" && entry.domain && (
+          <span className="text-[9px] text-gray-400 font-mono px-1">{entry.domain}</span>
+        )}
+      </div>
+
+      {/* Input + botão remover */}
+      <div className="flex gap-1">
+        <input
+          type="text"
+          value={entry.domain}
+          onChange={(e) => handleDomainChange(e.target.value)}
+          placeholder="dominio.com.br"
+          className="flex-1 min-w-0 rounded border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 px-2 py-1 text-[10px] font-mono focus:outline-none focus:ring-1 focus:ring-cyan-400/50"
+        />
+        {onRemove && (
+          <button onClick={onRemove}
+            className="w-6 h-6 flex items-center justify-center rounded text-white/20 hover:text-red-400 border border-white/10 flex-shrink-0">
+            <Trash2 size={10} />
+          </button>
+        )}
+      </div>
+
+      {/* Status */}
+      {logoStatus === "ok" && (
+        <p className="text-[9px] text-green-400 text-center">✓ Logo encontrada</p>
+      )}
+      {logoStatus === "error" && (
+        <p className="text-[9px] text-orange-400 text-center">Domínio no slide</p>
+      )}
+    </div>
+  );
+}
 
 function StepIndicator({ current }: { current: number }) {
   return (
@@ -1719,21 +1820,17 @@ export function ApresentacaoMensalClient() {
               onChange={(e) => setResolvedTitle(e.target.value)}
               placeholder="Título (ex: Mais de 30 agressores resolvidos em Janeiro)"
               className="w-full rounded-lg border border-border px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-            <p className="text-xs text-white/40 mb-2 italic">Até 18 domínios.</p>
+            <p className="text-xs text-white/40 mb-3 italic">
+              Digite o domínio — a logo é buscada automaticamente. Até 18 domínios.
+            </p>
             <div className="grid grid-cols-3 gap-2">
               {resolved.map((r, i) => (
-                <div key={i} className="flex gap-1">
-                  <input type="text" value={r.domain}
-                    onChange={(e) => setResolved((prev) => prev.map((x, idx) => idx === i ? { domain: e.target.value } : x))}
-                    placeholder="dominio.com.br"
-                    className="flex-1 rounded-lg border border-border px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
-                  {resolved.length > 1 && (
-                    <button onClick={() => setResolved((prev) => prev.filter((_, idx) => idx !== i))}
-                      className="w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-red-400 border border-white/10">
-                      <Trash2 size={11} />
-                    </button>
-                  )}
-                </div>
+                <ResolvidoCard
+                  key={i}
+                  entry={r}
+                  onChange={(updated) => setResolved((prev) => prev.map((x, idx) => idx === i ? updated : x))}
+                  onRemove={resolved.length > 1 ? () => setResolved((prev) => prev.filter((_, idx) => idx !== i)) : undefined}
+                />
               ))}
             </div>
             {resolved.length < 18 && (
