@@ -844,7 +844,7 @@ export function ApresentacaoMensalClient() {
                 <div className="rounded-lg border border-white/8 bg-white/5 px-3 py-2">
                   <p className="text-xs text-white/50 italic">
                     Legenda no slide: <span className="text-white/70 not-italic font-medium">
-                      *Economia total de R${economiaTotal ? parseFloat(economiaTotal.replace(/[^0-9.,]/g,"").replace(",",".")).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : "xx"} em notificações enviadas.
+                      *Economia total de R${economiaTotal ? parseFloat(economiaTotal.replace(/\./g,"").replace(",",".")).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : "xx"} em notificações enviadas.
                     </span>
                   </p>
                 </div>
@@ -940,7 +940,7 @@ export function ApresentacaoMensalClient() {
                 <div className="rounded-lg border border-white/8 bg-white/5 px-3 py-2">
                   <p className="text-xs text-white/50 italic">
                     Legenda no slide: <span className="text-white/70 not-italic font-medium">
-                      *Economia total de R${economiaMes ? parseFloat(economiaMes.replace(/[^0-9.,]/g,"").replace(",",".")).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : "xx"} em notificações enviadas.
+                      *Economia total de R${economiaMes ? parseFloat(economiaMes.replace(/\./g,"").replace(",",".")).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : "xx"} em notificações enviadas.
                     </span>
                   </p>
                 </div>
@@ -2024,7 +2024,7 @@ export function ApresentacaoMensalClient() {
             </div>
             {economiaTotal && (
               <p className="absolute bottom-2 left-3 text-[7px] text-gray-500 italic">
-                *Economia total de R${economiaTotal ? parseFloat(economiaTotal.replace(/[^0-9.,]/g,"").replace(",",".")).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : ""} em notificações enviadas.
+                *Economia total de R${economiaTotal ? parseFloat(economiaTotal.replace(/\./g,"").replace(",",".")).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : ""} em notificações enviadas.
               </p>
             )}
           </div>
