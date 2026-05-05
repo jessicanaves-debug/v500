@@ -1347,50 +1347,78 @@ function addResolvidosSlide(pptx: pptxgen, data: PresentationData, logo: string 
   const slide = pptx.addSlide();
   addSlideChrome(slide, logo, bg);
 
+  // ── Esquerda: título + texto + plataformas ────────────────────────────────
   slide.addText(data.resolvedTitle || "Agressores resolvidos", {
-    x: 0.6, y: 1.0, w: 7, h: 1,
+    x: 0.4, y: 0.85, w: 7, h: 0.9,
     fontFace: FONT_HEADING, fontSize: 26, bold: true, color: COLORS.primary,
   });
 
   slide.addText(
     "A Branddi atuou 24/7 em todas as plataformas para Detectar, Classificar e Remover.",
-    { x: 0.6, y: 2.0, w: 7, h: 0.6, fontFace: FONT_BODY, fontSize: 12, color: COLORS.textDark }
+    { x: 0.4, y: 1.85, w: 7, h: 0.55, fontFace: FONT_BODY, fontSize: 11, color: COLORS.textDark }
   );
 
+  // "Onde atuamos:" + ícones de plataforma em linha
   slide.addText("Onde atuamos:", {
-    x: 0.6, y: 2.8, w: 7, h: 0.4,
-    fontFace: FONT_HEADING, fontSize: 12, bold: true, color: COLORS.primary,
+    x: 0.4, y: 2.55, w: 7, h: 0.35,
+    fontFace: FONT_HEADING, fontSize: 11, bold: true, color: COLORS.primary,
   });
 
-  // Lado direito: 18 cards (6 linhas × 3 colunas)
+  // Caixa cinza com ícones das plataformas (SVG/texto como fallback)
+  slide.addShape("rect", {
+    x: 0.4, y: 3.0, w: 6.8, h: 1.4,
+    fill: { color: "F1F5F9" }, line: { color: COLORS.border, width: 0.5 },
+  });
+
+  // Ícones de plataforma como texto emoji (funciona em qualquer PPT)
+  const plataformas = [
+    { emoji: "🔵", label: "Google" },
+    { emoji: "🟠", label: "Google Shopping" },
+    { emoji: "🟢", label: "Google Play" },
+    { emoji: "🔷", label: "Bing" },
+    { emoji: "⚫", label: "Apple" },
+    { emoji: "📦", label: "Amazon Ads" },
+  ];
+
+  plataformas.forEach((p, i) => {
+    const x = 0.55 + i * 1.1;
+    slide.addText(`${p.emoji}\n${p.label}`, {
+      x, y: 3.1, w: 1.0, h: 1.1,
+      fontFace: FONT_BODY, fontSize: 7.5, color: COLORS.textDark,
+      align: "center", valign: "middle",
+    });
+  });
+
+  // ── Direita: cards de logos ───────────────────────────────────────────────
   slide.addText("Principais resolvidos:", {
-    x: 8, y: 1.0, w: 5, h: 0.4,
-    fontFace: FONT_HEADING, fontSize: 13, bold: true, color: COLORS.primary,
+    x: 7.5, y: 0.85, w: 6.0, h: 0.35,
+    fontFace: FONT_HEADING, fontSize: 11, bold: true, color: COLORS.primary,
   });
 
+  // 18 cards em 3 colunas, cada card 1.85" × 0.88"
   const resolvidos = data.resolved.slice(0, 18);
   resolvidos.forEach((r, i) => {
     const col = i % 3;
     const row = Math.floor(i / 3);
-    const cardX = 8.0 + col * 1.55;
-    const cardY = 1.5 + row * 0.95;
+    const cardX = 7.5 + col * 1.97;
+    const cardY = 1.3 + row * 0.97;
+
     slide.addShape("roundRect", {
-      x: cardX, y: cardY, w: 1.45, h: 0.8,
+      x: cardX, y: cardY, w: 1.87, h: 0.82,
       fill: { color: COLORS.white },
       line: { color: COLORS.border, width: 0.5 },
-      rectRadius: 0.05,
+      rectRadius: 0.04,
     });
+
     if (r.logoDataUrl) {
-      // Logo centralizada dentro do card
       slide.addImage({
         data: r.logoDataUrl,
-        x: cardX + 0.1, y: cardY + 0.1, w: 1.25, h: 0.6,
-        sizing: { type: "contain", w: 1.25, h: 0.6 },
+        x: cardX + 0.12, y: cardY + 0.1, w: 1.63, h: 0.62,
+        sizing: { type: "contain", w: 1.63, h: 0.62 },
       });
     } else {
-      // Fallback: texto do domínio
       slide.addText(r.domain, {
-        x: cardX, y: cardY, w: 1.45, h: 0.8,
+        x: cardX, y: cardY, w: 1.87, h: 0.82,
         fontFace: FONT_BODY, fontSize: 7, color: COLORS.primary,
         align: "center", valign: "middle", bold: true,
       });
