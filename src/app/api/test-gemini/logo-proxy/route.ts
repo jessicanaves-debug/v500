@@ -4,32 +4,76 @@ export async function GET(req: NextRequest) {
   const domain = req.nextUrl.searchParams.get("domain");
   if (!domain) return NextResponse.json({ error: "domain required" }, { status: 400 });
 
-  // Tenta Clearbit primeiro, depois fallback para favicon do Google
-  const sources = [
-    `https://logo.clearbit.com/${domain}`,
-    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
-  ];
+  // Limpa o domínio
+  const cleaned = domain.trim().toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .split("/")[0];
 
-  for (const url of sources) {
-    try {
-      const res = await fetch(url, { cache: "force-cache" } as RequestInit);
-      if (!res.ok) continue;
+  const headers = {
+    "User-Agent": "Mozilla/5.0 (compatible; Lumus-Branddi/1.0)",
+    "Accept": "image/png,image/jpeg,image/webp,image/*",
+  };
+
+  // 1. Tenta Clearbit (melhor qualidade)
+  try {
+    const res = await fetch(`https://logo.clearbit.com/${cleaned}`, { headers });
+    if (res.ok) {
       const contentType = res.headers.get("content-type") || "image/png";
-      // Clearbit retorna 200 mesmo quando não encontra (retorna imagem placeholder)
-      // Verificar se tem tamanho mínimo
+      // Clearbit retorna placeholder de 800+ bytes para domínios não encontrados
+      // Logos reais são geralmente maiores, mas vamos aceitar tudo >= 200 bytes
       const buffer = await res.arrayBuffer();
-      if (buffer.byteLength < 500) continue; // placeholder muito pequena = não encontrou
-      return new NextResponse(buffer, {
-        status: 200,
-        headers: {
-          "Content-Type": contentType,
-          "Cache-Control": "public, max-age=86400",
-        },
-      });
-    } catch {
-      continue;
+      if (buffer.byteLength >= 200) {
+        return new NextResponse(buffer, {
+          status: 200,
+          headers: {
+            "Content-Type": contentType,
+            "Cache-Control": "public, max-age=604800", // 7 dias
+          },
+        });
+      }
     }
-  }
+  } catch { /* continua para próxima fonte */ }
 
-  return NextResponse.json({ error: "Logo não encontrada" }, { status: 404 });
+  // 2. Fallback: favicon de alta resolução via Google
+  try {
+    const res = await fetch(
+      `https://www.google.com/s2/favicons?domain=${cleaned}&sz=256`,
+      { headers }
+    );
+    if (res.ok) {
+      const buffer = await res.arrayBuffer();
+      if (buffer.byteLength >= 100) {
+        return new NextResponse(buffer, {
+          status: 200,
+          headers: {
+            "Content-Type": "image/png",
+            "Cache-Control": "public, max-age=604800",
+          },
+        });
+      }
+    }
+  } catch { /* continua */ }
+
+  // 3. Último fallback: favicon do próprio site
+  try {
+    const res = await fetch(`https://${cleaned}/favicon.ico`, {
+      headers,
+      redirect: "follow",
+    });
+    if (res.ok) {
+      const buffer = await res.arrayBuffer();
+      if (buffer.byteLength >= 100) {
+        return new NextResponse(buffer, {
+          status: 200,
+          headers: {
+            "Content-Type": "image/x-icon",
+            "Cache-Control": "public, max-age=604800",
+          },
+        });
+      }
+    }
+  } catch { /* sem logo */ }
+
+  return NextResponse.json({ error: "Logo não encontrada para: " + cleaned }, { status: 404 });
 }
