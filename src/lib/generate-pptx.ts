@@ -464,7 +464,7 @@ function addBigNumbersTotalSlide(
 
   // Economia
   if (data.economiaTotal) {
-    slide.addText(`*Economia total de R${parseFloat(data.economiaTotal.replace(/[^0-9.,]/g,"").replace(",",".")).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})} em notificações enviadas.`, {
+    slide.addText(`*Economia total de R${parseFloat(data.economiaTotal.replace(/\./g,"").replace(",",".")).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})} em notificações enviadas.`, {
       x: 0.4, y: 5.6, w: 7, h: 0.4,
       fontFace: FONT_BODY, fontSize: 10, color: COLORS.textMuted, italic: true,
     });
@@ -572,7 +572,7 @@ function addBigNumbersDuploSlide(
   });
 
   if (data.economiaMes) {
-    slide.addText(`*Economia total de R${parseFloat(data.economiaMes.replace(/[^0-9.,]/g,"").replace(",",".")).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})} em notificações enviadas.`, {
+    slide.addText(`*Economia total de R${parseFloat(data.economiaMes.replace(/\./g,"").replace(",",".")).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})} em notificações enviadas.`, {
       x: 6.8, y: 6.5, w: 6.5, h: 0.4,
       fontFace: FONT_BODY, fontSize: 9, color: COLORS.textMuted, italic: true,
     });
